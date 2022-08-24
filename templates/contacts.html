@@ -1,15 +1,30 @@
-{% extends "material/base.html" %}
-
-{% block title %}Contacts{% endblock %}
-
-{% block styles %}
-{{ super() }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-{% endblock %}
-
-
-{% block content %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</head>
+<body>
     <div class="container">
+        <div class="card">
+            <div class="card-content">
+                <label>Search: <input id="search" type="text" name="search"></label>
+                <label>
+                    <input id="name" name="search-by" value="name" type="radio" checked />
+                    <span>Name</span>
+                </label>
+                <label>
+                    <input id="phone" name="search-by" value="phone" type="radio" />
+                    <span>Phone</span>
+                </label>
+                <a class="waves-effect waves-light btn" onclick="getContacts()"><i class="material-icons left">search</i>Search</a>
+            </div>
+        </div>
         <div class="card">
             <div class="card-content">
                 <table>
@@ -44,12 +59,7 @@
             <i class="large material-icons">add</i>
         </a>
     </div>
-{% endblock %}
 
-
-{% block scripts %}
-<!-- {{ super() }} -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
     <script>
         function button(handler, text, icon, color) {
@@ -70,48 +80,142 @@
         var contacts;
 
         function getContacts() {
-            fetch('/contacts')
-            .then(async (response) => {
-                const data = await response.json()
-                contacts = data['contacts']
-                contactsTable.innerHTML = ''
+            const searchByPhone = document.getElementById('phone')
+            const searchByName = document.getElementById('name')
+            const searchBox = document.getElementById('search')
+            if (searchByPhone.checked){
+                fetch(`/contacts?phone=${encodeURIComponent(searchBox.value)}`)
+                .then(async (response) => {
+                    const data = await response.json()
+                    contacts = data['contacts']
+                    contactsTable.innerHTML = ''
 
-                if (contacts.length == 0){
+                    if (contacts.length == 0){
+                        row = document.createElement('tr')
+                        col = row.insertCell(0)
+                        col.colSpan = 3
+                        col.innerText = 'No contacts'
+
+                        contactsTable.appendChild(row)
+                    }else{
+                        contacts.forEach((contact, index) => {
+                            row = document.createElement('tr')
+                            name_ = row.insertCell(0)
+                            phone = row.insertCell(1)
+                            actions = row.insertCell(2)
+                            
+                            name_.innerText = contact.name
+                            phone.innerText = contact.phone
+
+                            const deleteBtn = button(deleteContact, 'Delete', 'delete', 'red')
+                            actions.appendChild(deleteBtn);
+
+                            row.id = index;
+
+                            contactsTable.appendChild(row)
+                        });
+                    }
+                })
+                .catch((e) => {
+                    contactsTable.innerHTML = ''
                     row = document.createElement('tr')
                     col = row.insertCell(0)
                     col.colSpan = 3
                     col.innerText = 'No contacts'
 
+                    console.log(e);
+
                     contactsTable.appendChild(row)
-                }else{
-                    contacts.forEach((contact, index) => {
+                })
+            }else if (searchByName){
+                fetch(`/contacts?name=${searchBox.value}`)
+                .then(async (response) => {
+                    const data = await response.json()
+                    contacts = data['contacts']
+                    contactsTable.innerHTML = ''
+
+                    if (contacts.length == 0){
                         row = document.createElement('tr')
-                        name_ = row.insertCell(0)
-                        phone = row.insertCell(1)
-                        actions = row.insertCell(2)
-                        
-                        name_.innerText = contact.name
-                        phone.innerText = contact.phone
-
-                        const deleteBtn = button(deleteContact, 'Delete', 'delete', 'red')
-                        actions.appendChild(deleteBtn);
-
-                        row.id = index;
+                        col = row.insertCell(0)
+                        col.colSpan = 3
+                        col.innerText = 'No contacts'
 
                         contactsTable.appendChild(row)
-                    });
-                }
-            })
-            .catch((e) => {
-                row = document.createElement('tr')
-                col = row.insertCell(0)
-                col.colSpan = 3
-                col.innerText = 'Error fetching contacts'
+                    }else{
+                        contacts.forEach((contact, index) => {
+                            row = document.createElement('tr')
+                            name_ = row.insertCell(0)
+                            phone = row.insertCell(1)
+                            actions = row.insertCell(2)
+                            
+                            name_.innerText = contact.name
+                            phone.innerText = contact.phone
 
-                console.log(e);
+                            const deleteBtn = button(deleteContact, 'Delete', 'delete', 'red')
+                            actions.appendChild(deleteBtn);
 
-                contactsTable.appendChild(row)
-            })
+                            row.id = index;
+
+                            contactsTable.appendChild(row)
+                        });
+                    }
+                })
+                .catch((e) => {
+                    contactsTable.innerHTML = ''
+                    row = document.createElement('tr')
+                    col = row.insertCell(0)
+                    col.colSpan = 3
+                    col.innerText = 'No contacts'
+
+                    console.log(e);
+
+                    contactsTable.appendChild(row)
+                })
+            }else {
+                fetch('/contacts')
+                .then(async (response) => {
+                    const data = await response.json()
+                    contacts = data['contacts']
+                    contactsTable.innerHTML = ''
+    
+                    if (contacts.length == 0){
+                        row = document.createElement('tr')
+                        col = row.insertCell(0)
+                        col.colSpan = 3
+                        col.innerText = 'No contacts'
+    
+                        contactsTable.appendChild(row)
+                    }else{
+                        contacts.forEach((contact, index) => {
+                            row = document.createElement('tr')
+                            name_ = row.insertCell(0)
+                            phone = row.insertCell(1)
+                            actions = row.insertCell(2)
+                            
+                            name_.innerText = contact.name
+                            phone.innerText = contact.phone
+    
+                            const deleteBtn = button(deleteContact, 'Delete', 'delete', 'red')
+                            actions.appendChild(deleteBtn);
+    
+                            row.id = index;
+    
+                            contactsTable.appendChild(row)
+                        });
+                    }
+                })
+                .catch((e) => {
+                    contactsTable.innerHTML = ''
+                    row = document.createElement('tr')
+                    col = row.insertCell(0)
+                    col.colSpan = 3
+                    col.innerText = 'Error fetching contacts'
+    
+                    console.log(e);
+    
+                    contactsTable.appendChild(row)
+                })
+            }
         }
 
         function deleteContact(event) {
@@ -168,5 +272,11 @@
             var elems = document.querySelectorAll('.modal');
             var instances = M.Modal.init(elems, {});
         });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            var elems = document.querySelectorAll('select');
+            var instances = M.FormSelect.init(elems, {});
+        });
     </script>
-{% endblock %}
+</body>
+</html>

@@ -4,7 +4,6 @@ import re
 import pyodbc
 
 from flask import Flask, jsonify, abort, request, render_template
-from flask_material import Material
 
 def dbms(func):
     @functools.wraps(func)
@@ -109,7 +108,6 @@ def get_one_contact(curr: pyodbc.Cursor, id):
 
 
 app = Flask(__name__)
-Material(app)
 
 @app.route('/contacts')
 def list_contacts():
