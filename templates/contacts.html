@@ -1,0 +1,172 @@
+{% extends "material/base.html" %}
+
+{% block title %}Contacts{% endblock %}
+
+{% block styles %}
+{{ super() }}
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{% endblock %}
+
+
+{% block content %}
+    <div class="container">
+        <div class="card">
+            <div class="card-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Name</td>
+                            <td>Phone</td>
+                            <td>Actions</td>
+                        </tr>
+                    </thead>
+                    <tbody id="contacts-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-contact-modal" class="modal">
+        <div class="modal-content">
+            <form action="">
+                <label>Name: <input type="text" id="txtAddName"></label>
+                <label>Phone: <input type="tel" id="txtAddPhone"></label>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="modal-close waves-effect waves-green btn-flat red" onclick="addCancel()">Cancel</a>
+            <a href="#" class="waves-effect waves-green btn-flat green" onclick="addConfirm()">Add</a>
+        </div>
+    </div>
+
+    <div class="fixed-action-btn">
+        <a class="btn-floating btn-large waves-effect waves-light modal-trigger blue" href="#add-contact-modal">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+<!-- {{ super() }} -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <script>
+        function button(handler, text, icon, color) {
+            const btn = document.createElement('a')
+            btn.className = 'waves-effect waves-light btn ' + color
+            btn.innerText = text
+            const btnIcon = document.createElement('i')
+            btnIcon.className = 'material-icons left'
+            btnIcon.innerText = icon
+            btn.appendChild(btnIcon)
+            btn.addEventListener('click', handler)
+            return btn;
+        }
+    </script>
+
+    <script>
+        const contactsTable = document.getElementById('contacts-list')
+        var contacts;
+
+        function getContacts() {
+            fetch('/contacts')
+            .then(async (response) => {
+                const data = await response.json()
+                contacts = data['contacts']
+                contactsTable.innerHTML = ''
+
+                if (contacts.length == 0){
+                    row = document.createElement('tr')
+                    col = row.insertCell(0)
+                    col.colSpan = 3
+                    col.innerText = 'No contacts'
+
+                    contactsTable.appendChild(row)
+                }else{
+                    contacts.forEach((contact, index) => {
+                        row = document.createElement('tr')
+                        name_ = row.insertCell(0)
+                        phone = row.insertCell(1)
+                        actions = row.insertCell(2)
+                        
+                        name_.innerText = contact.name
+                        phone.innerText = contact.phone
+
+                        const deleteBtn = button(deleteContact, 'Delete', 'delete', 'red')
+                        actions.appendChild(deleteBtn);
+
+                        row.id = index;
+
+                        contactsTable.appendChild(row)
+                    });
+                }
+            })
+            .catch((e) => {
+                row = document.createElement('tr')
+                col = row.insertCell(0)
+                col.colSpan = 3
+                col.innerText = 'Error fetching contacts'
+
+                console.log(e);
+
+                contactsTable.appendChild(row)
+            })
+        }
+
+        function deleteContact(event) {
+            const id = event.target.parentElement.parentElement.id;
+    
+            if(confirm(`You sure you want to delete ${contacts[id].name}?`)){
+                fetch(`/contacts/${contacts[id].id}`, {
+                    method: 'DELETE'
+                }).then(() => {
+                    getContacts()
+                })
+
+            }
+        }
+
+        function addCancel() {
+            const txtName = document.getElementById('txtAddName');
+            const txtPhone = document.getElementById('txtAddPhone');
+
+            txtPhone.value = '';
+            txtName.value = '';
+        }
+
+        function addConfirm() {
+            const txtName = document.getElementById('txtAddName');
+            const txtPhone = document.getElementById('txtAddPhone');
+
+            fetch('/contacts', {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                method: 'POST',
+                body: JSON.stringify({
+                    name: txtName.value,
+                    phone: txtPhone.value
+                })
+            }).then(() => {
+                getContacts()
+                txtPhone.value = '';
+                txtName.value = '';
+                var modal = M.Modal.getInstance(document.getElementById('add-contact-modal'));
+                modal.close()
+            }).catch(() => {
+                alert('Error adding contact')
+            })
+        }
+
+        getContacts()
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var elems = document.querySelectorAll('.modal');
+            var instances = M.Modal.init(elems, {});
+        });
+    </script>
+{% endblock %}
